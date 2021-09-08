@@ -9,8 +9,6 @@ const {
 
 const { DOMAIN, commitClient } = require("./db");
 
-
-
 const userType = new GraphQLObjectType({
   name: "user",
   fields: () => ({
@@ -31,7 +29,7 @@ const contactType = new GraphQLObjectType({
     phonenumber: { type: GraphQLInt },
     // user: { type: userType },
     // activity: { type: activityType },
-    user_id: {type: GraphQLInt}
+    user_id: { type: GraphQLInt },
   }),
 });
 
@@ -46,7 +44,6 @@ const activityType = new GraphQLObjectType({
     //
     user_id: { type: GraphQLInt },
     activity_id: { type: GraphQLInt },
-
   }),
 });
 
@@ -57,38 +54,96 @@ const RootQuery = new GraphQLObjectType({
       type: new GraphQLList(userType),
       resolve: async function (parent, args) {
         let client = DOMAIN.client;
-        let rows = (await client.query("SELECT * FROM users;")).rows
-        await commitClient()
-        return rows
+        let rows = (await client.query("SELECT * FROM users;")).rows;
+        await commitClient();
+        return rows;
       },
     },
-    user:{
+    user: {
       type: userType,
       args: {
-        id : {type: GraphQLInt}
+        id: { type: GraphQLInt },
       },
-      resolve: async function(parentVal, args){
+      resolve: async function (parentVal, args) {
         let client = DOMAIN.client;
-        let rows = (await client.query("SELECT * FROM users WHERE id=$1;",[args.id])).rows
-        await commitClient()
-        return rows[0]
-      }
+        let rows = (
+          await client.query("SELECT * FROM users WHERE id=$1;", [args.id])
+        ).rows;
+        await commitClient();
+        return rows[0];
+      },
     },
-    contacts:{
+    contacts: {
       type: new GraphQLList(contactType),
-      args:{
-        user_id: {type: GraphQLInt }
+      args: {
+        user_id: { type: GraphQLInt },
       },
-      resolve: async function(parentVal, args){
+      resolve: async function (parentVal, args) {
         let client = DOMAIN.client;
-        let rows = (await client.query("SELECT * FROM contacts WHERE user_id=$1;",[args.user_id])).rows
-        await commitClient()
-        return rows
-      }
+        let rows = (
+          await client.query("SELECT * FROM contacts WHERE user_id=$1;", [
+            args.user_id,
+          ])
+        ).rows;
+        await commitClient();
+        return rows;
+      },
     },
-    // contact:{},
-    // activities:{},
-    // activity:{}
+    contact: {
+      type: contactType,
+      args: {
+        user_id: { type: GraphQLInt },
+        id: { type: GraphQLInt },
+      },
+      resolve: async function (parentVal, args) {
+        let client = DOMAIN.client;
+        let rows = (
+          await client.query(
+            "SELECT * FROM contacts WHERE user_id=$1 AND id=$2",
+            [args.user_id, args.id]
+          )
+        ).rows;
+        await commitClient();
+        return rows[0];
+      },
+    },
+    activities: {
+      type: new GraphQLList(activityType),
+      args: {
+        user_id: { type: GraphQLInt },
+        contact_id: { type: GraphQLInt },
+      },
+      resolve: async function (parentVal, args) {
+        let client = DOMAIN.client;
+        let rows = (
+          await client.query(
+            "SELECT * FROM activities WHERE user_id=$1 AND contact_id=$2;",
+            [args.user_id, args.contact_id]
+          )
+        ).rows;
+        await commitClient();
+        return rows;
+      },
+    },
+    activity: {
+      type: activityType,
+      args: {
+        user_id: { type: GraphQLInt },
+        contact_id: { type: GraphQLInt },
+        activity_id: { type: GraphQLInt },
+      },
+      resolve: async function (parentVal, args) {
+        let client = DOMAIN.client;
+        let rows = (
+          await client.query(
+            "SELECT * FROM activities WHERE user_id=$1 AND contact_id=$2 AND id=$3;",
+            [args.user_id, args.contact_id, args.activity_id]
+          )
+        ).rows;
+        await commitClient();
+        return rows[0];
+      },
+    },
   },
 });
 
